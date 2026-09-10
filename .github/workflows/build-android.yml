@@ -1,3 +1,4 @@
+```yaml
 name: Build Android APK
 
 on:
@@ -25,26 +26,64 @@ jobs:
 
       - name: Show versions
         run: |
+          echo "===== Node ====="
           node --version
+
+          echo "===== NPM ====="
           npm --version
+
+          echo "===== Java ====="
           java -version
+
+          echo "===== Environment ====="
           echo "ANDROID_HOME=$ANDROID_HOME"
           echo "JAVA_HOME=$JAVA_HOME"
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "===== npm ci ====="
+          npm ci
 
       - name: Build web app
-        run: npm run build
+        run: |
+          echo "===== npm run build ====="
+          npm run build
+
+      - name: Check Capacitor
+        run: |
+          echo "===== Capacitor ====="
+          npx cap --version
+
+          echo "===== Project files ====="
+          ls -la
+
+          echo "===== Android directory ====="
+          if [ -d android ]; then
+            ls -la android
+          else
+            echo "ERROR: android directory does not exist"
+            exit 1
+          fi
 
       - name: Sync Capacitor
-        run: npx cap sync android
-
-      - name: Check Gradle
         run: |
+          echo "===== npx cap sync android ====="
+          npx cap sync android
+
+      - name: Check Android project
+        run: |
+          echo "===== Android directory ====="
+          ls -la android
+
+          echo "===== Gradle wrapper ====="
           ls -la android/gradlew
           file android/gradlew
-          head -n 5 android/gradlew
+
+          echo "===== Gradle wrapper first lines ====="
+          head -n 10 android/gradlew
+
+          echo "===== Gradle wrapper properties ====="
+          cat android/gradle/wrapper/gradle-wrapper.properties
 
       - name: Build Android APK
         working-directory: android
@@ -52,28 +91,65 @@ jobs:
         run: |
           chmod +x gradlew
 
-          echo "===== Gradle version ====="
+          echo ""
+          echo "=========================================="
+          echo "           GRADLE VERSION"
+          echo "=========================================="
+
           ./gradlew --version
 
-          echo "===== Starting Android build ====="
+          echo ""
+          echo "=========================================="
+          echo "       STARTING ANDROID BUILD"
+          echo "=========================================="
 
-          set +e
-          ./gradlew assembleDebug --stacktrace --info 2>&1 | tee gradle-build.log
+          set -o pipefail
+
+          ./gradlew assembleDebug \
+            --stacktrace \
+            --info \
+            --console=plain \
+            2>&1 | tee gradle-build.log
+
           BUILD_EXIT=${PIPESTATUS[0]}
 
-          echo "===== Gradle exit code: ${BUILD_EXIT} ====="
+          echo ""
+          echo "=========================================="
+          echo "       GRADLE EXIT CODE: ${BUILD_EXIT}"
+          echo "=========================================="
 
-          echo "===== Last 200 lines of Gradle log ====="
-          tail -n 200 gradle-build.log
+          echo ""
+          echo "=========================================="
+          echo "       LAST 300 LINES OF LOG"
+          echo "=========================================="
+
+          tail -n 300 gradle-build.log
 
           exit ${BUILD_EXIT}
+
+      - name: Show generated APK
+        if: success()
+        run: |
+          echo "===== APK files ====="
+          find android/app/build/outputs -type f -print
 
       - name: Upload Gradle log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gradle-build-log
-          path: android/gradle-build.log
+          path: |
+            android/gradle-build.log
+          if-no-files-found: warn
+
+      - name: Upload Android diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-diagnostics
+          path: |
+            android/
+            capacitor.config.*
           if-no-files-found: warn
 
       - name: Upload APK
@@ -83,3 +159,4 @@ jobs:
           name: crossworld-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+```
