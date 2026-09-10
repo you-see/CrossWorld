@@ -1,17 +1,450 @@
+
 name: Build Android APK
 
 on:
   workflow_dispatch:
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Test
+      # ============================================================
+      # 1. CHECKOUT
+      # ============================================================
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # ============================================================
+      # 2. NODE.JS
+      # ============================================================
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      # ============================================================
+      # 3. JAVA
+      # ============================================================
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      # ============================================================
+      # 4. ANDROID SDK
+      # ============================================================
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # ============================================================
+      # 5. SHOW ENVIRONMENT
+      # ============================================================
+      - name: Show environment
+        shell: bash
         run: |
-          echo "================================"
-          echo "CrossWorld Android Workflow OK"
-          echo "================================"
-          echo "Ubuntu:"
-          uname -a
+          set -x
+
+          echo "=========================================="
+          echo "ENVIRONMENT"
+          echo "=========================================="
+
+          echo "PWD:"
+          pwd
+
+          echo ""
+          echo "Node:"
+          node --version
+
+          echo ""
+          echo "NPM:"
+          npm --version
+
+          echo ""
+          echo "Java:"
+          java -version
+
+          echo ""
+          echo "JAVA_HOME:"
+          echo "$JAVA_HOME"
+
+          echo ""
+          echo "ANDROID_HOME:"
+          echo "$ANDROID_HOME"
+
+          echo ""
+          echo "ANDROID_SDK_ROOT:"
+          echo "$ANDROID_SDK_ROOT"
+
+          echo ""
+          echo "Gradle:"
+          gradle --version || true
+
+          echo ""
+          echo "Disk:"
+          df -h
+
+          echo ""
+          echo "Memory:"
+          free -h
+
+          echo ""
+          echo "=========================================="
+          echo "REPOSITORY FILES"
+          echo "=========================================="
+
+          ls -la
+
+          echo ""
+          echo "=========================================="
+          echo "PACKAGE.JSON"
+          echo "=========================================="
+
+          cat package.json
+
+      # ============================================================
+      # 6. INSTALL NPM DEPENDENCIES
+      # ============================================================
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "NPM CI"
+          echo "=========================================="
+
+          npm ci
+
+          echo ""
+          echo "=========================================="
+          echo "NPM DEPENDENCIES INSTALLED"
+          echo "=========================================="
+
+          npm list --depth=0 || true
+
+      # ============================================================
+      # 7. BUILD WEB APP
+      # ============================================================
+      - name: Build web app
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "BUILD WEB APP"
+          echo "=========================================="
+
+          npm run build
+
+          echo ""
+          echo "=========================================="
+          echo "DIST CONTENT"
+          echo "=========================================="
+
+          if [ -d dist ]; then
+            find dist -maxdepth 3 -type f -print
+          else
+            echo "ERROR: dist directory was not created"
+            exit 1
+          fi
+
+      # ============================================================
+      # 8. CAPACITOR VERSION
+      # ============================================================
+      - name: Check Capacitor
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "CAPACITOR"
+          echo "=========================================="
+
+          npx cap --version
+
+          echo ""
+          echo "Capacitor packages:"
+          npm list @capacitor/core @capacitor/cli @capacitor/android || true
+
+      # ============================================================
+      # 9. CHECK ANDROID DIRECTORY
+      # ============================================================
+      - name: Check Android project before sync
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "ANDROID PROJECT BEFORE SYNC"
+          echo "=========================================="
+
+          if [ -d android ]; then
+            echo "android directory exists"
+            find android -maxdepth 2 -type f -print | sort
+          else
+            echo "ERROR: android directory does not exist"
+            echo ""
+            echo "Trying to inspect Capacitor configuration:"
+            ls -la
+            exit 1
+          fi
+
+      # ============================================================
+      # 10. CAPACITOR SYNC
+      # ============================================================
+      - name: Sync Capacitor
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "CAPACITOR SYNC ANDROID"
+          echo "=========================================="
+
+          npx cap sync android
+
+          echo ""
+          echo "=========================================="
+          echo "ANDROID PROJECT AFTER SYNC"
+          echo "=========================================="
+
+          find android -maxdepth 3 -type f -print | sort
+
+      # ============================================================
+      # 11. CHECK GRADLE WRAPPER
+      # ============================================================
+      - name: Check Gradle wrapper
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "GRADLE WRAPPER"
+          echo "=========================================="
+
+          cd android
+
+          echo ""
+          echo "gradlew:"
+          ls -la gradlew
+
+          echo ""
+          echo "File type:"
+          file gradlew
+
+          echo ""
+          echo "First 20 lines:"
+          head -n 20 gradlew
+
+          echo ""
+          echo "Gradle wrapper properties:"
+          cat gradle/wrapper/gradle-wrapper.properties
+
+          echo ""
+          echo "Gradle directory:"
+          find gradle -maxdepth 3 -type f -print | sort
+
+      # ============================================================
+      # 12. GRADLE VERSION
+      # ============================================================
+      - name: Check Gradle
+        working-directory: android
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "GRADLE VERSION"
+          echo "=========================================="
+
+          chmod +x gradlew
+
+          ./gradlew --version
+
+      # ============================================================
+      # 13. ANDROID SDK INFORMATION
+      # ============================================================
+      - name: Check Android SDK
+        shell: bash
+        run: |
+          set -x
+
+          echo "=========================================="
+          echo "ANDROID SDK"
+          echo "=========================================="
+
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+
+          echo ""
+          echo "SDK directories:"
+          ls -la "$ANDROID_HOME" || true
+
+          echo ""
+          echo "Installed SDK packages:"
+          sdkmanager --list_installed || true
+
+          echo ""
+          echo "ADB:"
+          adb version || true
+
+      # ============================================================
+      # 14. GRADLE CLEAN
+      # ============================================================
+      - name: Gradle clean
+        working-directory: android
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "GRADLE CLEAN"
+          echo "=========================================="
+
+          chmod +x gradlew
+
+          ./gradlew clean \
+            --stacktrace \
+            --info \
+            --console=plain
+
+      # ============================================================
+      # 15. BUILD DEBUG APK
+      # ============================================================
+      - name: Build Android Debug APK
+        working-directory: android
+        shell: bash
+        run: |
+          set -o pipefail
+
+          echo ""
+          echo "=========================================="
+          echo "ANDROID DEBUG APK BUILD"
+          echo "=========================================="
+
+          chmod +x gradlew
+
+          echo ""
+          echo "Starting Gradle..."
+          echo ""
+
+          ./gradlew assembleDebug \
+            --stacktrace \
+            --info \
+            --console=plain \
+            2>&1 | tee gradle-build.log
+
+          BUILD_EXIT=${PIPESTATUS[0]}
+
+          echo ""
+          echo "=========================================="
+          echo "GRADLE EXIT CODE: ${BUILD_EXIT}"
+          echo "=========================================="
+
+          echo ""
+          echo "=========================================="
+          echo "LAST 300 LINES"
+          echo "=========================================="
+
+          tail -n 300 gradle-build.log || true
+
+          echo ""
+          echo "=========================================="
+          echo "BUILD OUTPUT FILES"
+          echo "=========================================="
+
+          find app/build/outputs -type f -print 2>/dev/null || true
+
+          exit ${BUILD_EXIT}
+
+      # ============================================================
+      # 16. ALWAYS SHOW DIAGNOSTICS
+      # ============================================================
+      - name: Show diagnostics
+        if: always()
+        working-directory: android
+        shell: bash
+        run: |
+          echo "=========================================="
+          echo "ANDROID DIAGNOSTICS"
+          echo "=========================================="
+
+          echo ""
+          echo "Current directory:"
+          pwd
+
+          echo ""
+          echo "Android files:"
+          find . -maxdepth 3 -type f -print | sort | head -n 1000
+
+          echo ""
+          echo "Gradle build log:"
+          if [ -f gradle-build.log ]; then
+            echo "gradle-build.log exists"
+            echo ""
+            echo "Log size:"
+            wc -c gradle-build.log
+
+            echo ""
+            echo "Last 500 lines:"
+            tail -n 500 gradle-build.log
+          else
+            echo "gradle-build.log does not exist"
+          fi
+
+      # ============================================================
+      # 17. UPLOAD GRADLE LOG
+      # ============================================================
+      - name: Upload Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: android/gradle-build.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      # ============================================================
+      # 18. UPLOAD ANDROID DIAGNOSTICS
+      # ============================================================
+      - name: Upload Android diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-diagnostics
+          path: |
+            android/app/build/outputs/**
+            android/app/build/reports/**
+            android/build/reports/**
+            android/gradle-build.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      # ============================================================
+      # 19. SHOW APK
+      # ============================================================
+      - name: Show generated APK
+        if: success()
+        shell: bash
+        run: |
+          echo "=========================================="
+          echo "APK GENERATED SUCCESSFULLY"
+          echo "=========================================="
+
+          find android/app/build/outputs/apk -type f -print
+
+      # ============================================================
+      # 20. UPLOAD APK
+      # ============================================================
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crossworld-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
