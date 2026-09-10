@@ -23,6 +23,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Show versions
+        run: |
+          node --version
+          npm --version
+          java -version
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "JAVA_HOME=$JAVA_HOME"
+
       - name: Install dependencies
         run: npm ci
 
@@ -32,14 +40,44 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Make Gradle executable
-        run: chmod +x android/gradlew
+      - name: Check Gradle
+        run: |
+          ls -la android/gradlew
+          file android/gradlew
+          head -n 5 android/gradlew
 
       - name: Build Android APK
         working-directory: android
-        run: ./gradlew assembleDebug --stacktrace
+        shell: bash
+        run: |
+          chmod +x gradlew
+
+          echo "===== Gradle version ====="
+          ./gradlew --version
+
+          echo "===== Starting Android build ====="
+
+          set +e
+          ./gradlew assembleDebug --stacktrace --info 2>&1 | tee gradle-build.log
+          BUILD_EXIT=${PIPESTATUS[0]}
+
+          echo "===== Gradle exit code: ${BUILD_EXIT} ====="
+
+          echo "===== Last 200 lines of Gradle log ====="
+          tail -n 200 gradle-build.log
+
+          exit ${BUILD_EXIT}
+
+      - name: Upload Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: android/gradle-build.log
+          if-no-files-found: warn
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: crossworld-debug-apk
