@@ -1,0 +1,544 @@
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family:
+    Arial,
+    Tahoma,
+    sans-serif;
+
+  background:
+    radial-gradient(
+      circle at center,
+      #14243a 0%,
+      #050b14 55%,
+      #02050a 100%
+    );
+
+  color: white;
+}
+
+/* =========================================
+   APP
+========================================= */
+
+.app {
+  width: 100%;
+  height: 100dvh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at center,
+      #14243a 0%,
+      #050b14 55%,
+      #02050a 100%
+    );
+}
+
+/* =========================================
+   GLOBE AREA
+========================================= */
+
+.globe-section {
+  width: 100%;
+
+  flex: 1 1 0;
+
+  min-width: 0;
+  min-height: 0;
+
+  position: relative;
+  z-index: 1;
+
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  isolation: isolate;
+
+  order: 1;
+}
+
+/* =========================================
+   WORLD GLOBE
+========================================= */
+
+.world-globe {
+  width: 100%;
+  height: 100%;
+
+  min-width: 0;
+  min-height: 0;
+
+  position: relative;
+
+  overflow: hidden;
+
+  flex: 1 1 auto;
+
+  background:
+    radial-gradient(
+      circle at center,
+      #102d48 0%,
+      #07121f 45%,
+      #02060d 100%
+    );
+}
+
+/* =========================================
+   COUNTRY INFO PANEL
+========================================= */
+
+.globe-section > .country-info-panel {
+  position: absolute;
+
+  right: 24px;
+  bottom: 24px;
+
+  z-index: 50;
+}
+
+/* =========================================
+   COUNTRY LIST / FOOTER
+========================================= */
+
+.country-list-section {
+  width: 100%;
+
+  /* ارتفاع دقیق لیست کشورها */
+  height: 64px;
+  min-height: 64px;
+  max-height: 64px;
+
+  /* مهم: flex-basis هم باید 64px باشد */
+  flex: 0 0 64px;
+
+  position: relative;
+  z-index: 100;
+
+  order: 2;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 4px;
+
+  background:
+    rgba(2, 8, 16, 0.94);
+
+  border-top:
+    1px solid rgba(
+      80,
+      190,
+      255,
+      0.14
+    );
+
+  scrollbar-width: thin;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =========================================
+   COUNTRY LIST INNER
+========================================= */
+
+.country-list-section > * {
+  flex-shrink: 0;
+}
+
+/* =========================================
+   COUNTRY BUTTONS
+========================================= */
+
+.country-list-section button {
+  height: 32px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  padding: 0 10px;
+  margin: 0;
+
+  background: transparent;
+  border: 0;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.78
+    );
+
+  font-family:
+    Arial,
+    Tahoma,
+    sans-serif;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+  outline: none;
+
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+}
+
+/* =========================================
+   COUNTRY BUTTON HOVER
+========================================= */
+
+.country-list-section button:hover {
+  color: #ffffff;
+
+  background:
+    rgba(
+      67,
+      191,
+      255,
+      0.08
+    );
+
+  border-radius: 6px;
+}
+
+/* =========================================
+   COUNTRY BUTTON FOCUS
+========================================= */
+
+.country-list-section button:focus-visible {
+  color: #ffffff;
+
+  background:
+    rgba(
+      67,
+      191,
+      255,
+      0.12
+    );
+
+  border-radius: 6px;
+
+  box-shadow:
+    0 0 0 1px
+      rgba(
+        85,
+        199,
+        255,
+        0.35
+      );
+}
+
+/* =========================================
+   SELECTED COUNTRY
+========================================= */
+
+.country-list-section
+  button[aria-pressed="true"] {
+  color: #ffffff;
+
+  background:
+    rgba(
+      67,
+      191,
+      255,
+      0.14
+    );
+
+  border-radius: 7px;
+}
+
+/* =========================================
+   ARIA SELECTED
+========================================= */
+
+.country-list-section
+  button[aria-selected="true"] {
+  color: #55c7ff;
+
+  background:
+    rgba(
+      67,
+      191,
+      255,
+      0.12
+    );
+
+  border-radius: 7px;
+}
+
+/* =========================================
+   COUNTRY NAME
+========================================= */
+
+.country-list-section
+  button
+  span {
+  display: inline;
+
+  padding: 0;
+  margin: 0;
+
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* =========================================
+   REMOVE FLAGS / ICONS
+========================================= */
+
+.country-list-section
+  button
+  img,
+.country-list-section
+  button
+  svg {
+  display: none;
+}
+
+/* =========================================
+   LINKS
+========================================= */
+
+.country-list-section a {
+  height: 32px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  padding: 0 10px;
+  margin: 0;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.78
+    );
+
+  background: transparent;
+  border: 0;
+
+  font-family:
+    Arial,
+    Tahoma,
+    sans-serif;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+
+  text-decoration: none;
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+}
+
+/* =========================================
+   LINK HOVER
+========================================= */
+
+.country-list-section a:hover {
+  color: #ffffff;
+
+  background:
+    rgba(
+      67,
+      191,
+      255,
+      0.08
+    );
+
+  border-radius: 6px;
+}
+
+/* =========================================
+   REMOVE LINK ICONS
+========================================= */
+
+.country-list-section
+  a
+  img,
+.country-list-section
+  a
+  svg {
+  display: none;
+}
+
+/* =========================================
+   COUNTRY SPACING
+========================================= */
+
+.country-list-section
+  button
+  + button {
+  margin-left: 2px;
+}
+
+.country-list-section
+  a
+  + a {
+  margin-left: 2px;
+}
+
+/* =========================================
+   SCROLLBAR
+========================================= */
+
+.country-list-section::-webkit-scrollbar {
+  height: 3px;
+}
+
+.country-list-section::-webkit-scrollbar-track {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.03
+    );
+}
+
+.country-list-section::-webkit-scrollbar-thumb {
+  background:
+    rgba(
+      80,
+      190,
+      255,
+      0.3
+    );
+
+  border-radius: 10px;
+}
+
+.country-list-section::-webkit-scrollbar-thumb:hover {
+  background:
+    rgba(
+      80,
+      190,
+      255,
+      0.5
+    );
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+  .country-list-section {
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+
+    flex-basis: 40px;
+
+    padding: 0 6px;
+  }
+
+  .country-list-section button,
+  .country-list-section a {
+    height: 30px;
+
+    padding: 0 8px;
+
+    font-size: 12px;
+  }
+
+  /* پنل اطلاعات در موبایل */
+
+  .globe-section > .country-info-panel {
+    right: 12px;
+    bottom: 12px;
+
+    width: 230px;
+    max-width: calc(100% - 24px);
+  }
+}
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 380px) {
+  .globe-section > .country-info-panel {
+    right: 8px;
+    bottom: 8px;
+
+    width: 210px;
+    max-width: calc(100% - 16px);
+  }
+}
+
+/* =========================================
+   LANDSCAPE MOBILE / TABLET
+========================================= */
+
+@media (
+  max-height: 600px
+) and (
+  orientation: landscape
+) {
+  .country-list-section {
+    height: 60px;
+    min-height: 60px;
+    max-height: 60px;
+
+    flex-basis: 60px;
+  }
+
+  .country-list-section button,
+  .country-list-section a {
+    height: 60px;
+
+    padding: 0 4px;
+
+    font-size: 11px;
+  }
+
+  .globe-section > .country-info-panel {
+    right: 4px;
+    bottom: 60px;
+
+    width: 220px;
+  }
+}

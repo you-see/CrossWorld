@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CrossWorld</string>
+    <string name="title_activity_main">CrossWorld</string>
+    <string name="package_name">com.crossworld.app</string>
+    <string name="custom_url_scheme">com.crossworld.app</string>
+</resources>
