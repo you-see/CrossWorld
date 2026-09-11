@@ -13,7 +13,6 @@ import {
 
 import {
   OrbitControls,
-  Stars,
 } from '@react-three/drei'
 
 import * as THREE from 'three'
@@ -63,16 +62,18 @@ function GlobeMesh() {
   texture.colorSpace =
     THREE.SRGBColorSpace
 
-  texture.anisotropy = 8
+  // Lower anisotropy is cheaper on mobile GPUs.
+  texture.anisotropy = 2
 
   return (
     <>
+      {/* Main earth */}
       <mesh>
         <sphereGeometry
           args={[
             GLOBE_RADIUS,
-            128,
-            128,
+            64,
+            64,
           ]}
         />
 
@@ -82,12 +83,13 @@ function GlobeMesh() {
         />
       </mesh>
 
+      {/* Very subtle inner glow */}
       <mesh scale={1.002}>
         <sphereGeometry
           args={[
             GLOBE_RADIUS,
-            96,
-            96,
+            32,
+            32,
           ]}
         />
 
@@ -116,8 +118,8 @@ function Atmosphere() {
         <sphereGeometry
           args={[
             GLOBE_RADIUS,
-            64,
-            64,
+            32,
+            32,
           ]}
         />
 
@@ -137,8 +139,8 @@ function Atmosphere() {
         <sphereGeometry
           args={[
             GLOBE_RADIUS,
-            64,
-            64,
+            32,
+            32,
           ]}
         />
 
@@ -164,7 +166,9 @@ function Atmosphere() {
 function GlobeLights() {
   return (
     <>
-      <ambientLight intensity={1} />
+      <ambientLight
+        intensity={1}
+      />
 
       <directionalLight
         position={[
@@ -175,195 +179,6 @@ function GlobeLights() {
         intensity={1.5}
       />
     </>
-  )
-}
-
-/* =========================================================
-   Energy Rings
-========================================================= */
-
-function EnergyRings() {
-  const ring1 =
-    useRef<THREE.Mesh | null>(null)
-
-  const ring2 =
-    useRef<THREE.Mesh | null>(null)
-
-  useFrame((_, delta) => {
-    if (ring1.current) {
-      ring1.current.rotation.z +=
-        delta * 0.12
-
-      ring1.current.rotation.y +=
-        delta * 0.05
-    }
-
-    if (ring2.current) {
-      ring2.current.rotation.z -=
-        delta * 0.08
-
-      ring2.current.rotation.x +=
-        delta * 0.04
-    }
-  })
-
-  return (
-    <>
-      <mesh
-        ref={ring1}
-        rotation={[
-          Math.PI / 3,
-          0,
-          0,
-        ]}
-      >
-        <torusGeometry
-          args={[
-            2.28,
-            0.004,
-            8,
-            160,
-          ]}
-        />
-
-        <meshBasicMaterial
-          color="#55C7FF"
-          transparent
-          opacity={0.25}
-          blending={
-            THREE.AdditiveBlending
-          }
-          depthWrite={false}
-        />
-      </mesh>
-
-      <mesh
-        ref={ring2}
-        rotation={[
-          -Math.PI / 3.4,
-          0.2,
-          0,
-        ]}
-      >
-        <torusGeometry
-          args={[
-            2.35,
-            0.003,
-            8,
-            160,
-          ]}
-        />
-
-        <meshBasicMaterial
-          color="#A878FF"
-          transparent
-          opacity={0.16}
-          blending={
-            THREE.AdditiveBlending
-          }
-          depthWrite={false}
-        />
-      </mesh>
-    </>
-  )
-}
-
-/* =========================================================
-   Orbit Particles
-========================================================= */
-
-function OrbitParticles() {
-  const groupRef =
-    useRef<THREE.Group | null>(null)
-
-  useFrame((_, delta) => {
-    if (!groupRef.current) {
-      return
-    }
-
-    groupRef.current.rotation.y +=
-      delta * 0.08
-  })
-
-  const particles =
-    Array.from(
-      { length: 18 },
-      (_, index) => {
-        const angle =
-          (index / 18) *
-          Math.PI *
-          2
-
-        const radius = 2.29
-
-        return {
-          x:
-            Math.cos(angle) *
-            radius,
-
-          y:
-            Math.sin(angle) *
-            radius *
-            0.35,
-
-          z: 0,
-        }
-      },
-    )
-
-  return (
-    <group
-      ref={groupRef}
-      rotation={[
-        Math.PI / 3,
-        0,
-        0,
-      ]}
-    >
-      {particles.map(
-        (
-          particle,
-          index,
-        ) => (
-          <mesh
-            key={`orbit-${index}`}
-            position={[
-              particle.x,
-              particle.y,
-              particle.z,
-            ]}
-          >
-            <sphereGeometry
-              args={[
-                index % 5 === 0
-                  ? 0.018
-                  : 0.008,
-                8,
-                8,
-              ]}
-            />
-
-            <meshBasicMaterial
-              color={
-                index % 5 === 0
-                  ? '#FFFFFF'
-                  : '#54C9FF'
-              }
-              transparent
-              opacity={
-                index % 5 === 0
-                  ? 0.9
-                  : 0.5
-              }
-              blending={
-                THREE.AdditiveBlending
-              }
-              depthWrite={false}
-            />
-          </mesh>
-        ),
-      )}
-    </group>
   )
 }
 
@@ -429,24 +244,28 @@ function GlobeScene({
   selectedCountry,
 }: GlobeSceneProps) {
   const globeGroup =
-    useRef<THREE.Group | null>(null)
-
-  const targetRotation =
-    useRef<THREE.Quaternion | null>(
+    useRef<THREE.Group | null>(
       null,
     )
+
+  const targetRotation =
+    useRef<
+      THREE.Quaternion | null
+    >(null)
 
   const controlsRef =
     useRef<any>(null)
 
   /* =======================================================
-     Focus
+     Focus Country
   ======================================================= */
 
   const focusCountry =
     useCallback(
       (center: THREE.Vector3) => {
-        if (!globeGroup.current) {
+        if (
+          !globeGroup.current
+        ) {
           return
         }
 
@@ -474,32 +293,23 @@ function GlobeScene({
             ),
           )
 
-        const target =
+        targetRotation.current =
           createFocusQuaternion(
             longitude,
             latitude,
           )
-
-        targetRotation.current =
-          target
-
-        console.log(
-          '[WorldGlobe] Focus:',
-          {
-            longitude,
-            latitude,
-          },
-        )
       },
       [],
     )
 
   /* =======================================================
-     Default Iran Focus
+     Default Focus
   ======================================================= */
 
   useEffect(() => {
-    if (selectedCountry) {
+    if (
+      selectedCountry
+    ) {
       return
     }
 
@@ -508,17 +318,6 @@ function GlobeScene({
         DEFAULT_LONGITUDE,
         DEFAULT_LATITUDE,
       )
-  }, [
-    selectedCountry,
-  ])
-
-  /* =======================================================
-     Selected Country Focus
-  ======================================================= */
-
-  useEffect(() => {
-    // فوکوس واقعی از CountriesLayer
-    // با onCountryCenter انجام می‌شود.
   }, [
     selectedCountry,
   ])
@@ -534,7 +333,10 @@ function GlobeScene({
     const target =
       targetRotation.current
 
-    if (!globe || !target) {
+    if (
+      !globe ||
+      !target
+    ) {
       return
     }
 
@@ -548,7 +350,9 @@ function GlobeScene({
         target,
       )
 
-    if (angle < 0.0005) {
+    if (
+      angle < 0.0005
+    ) {
       globe.quaternion.copy(
         target,
       )
@@ -566,24 +370,12 @@ function GlobeScene({
     <>
       <GlobeLights />
 
-      <Stars
-        radius={50}
-        depth={35}
-        count={1800}
-        factor={1.8}
-        saturation={0.2}
-        fade
-        speed={0.2}
-      />
-
-      <group ref={globeGroup}>
+      <group
+        ref={globeGroup}
+      >
         <GlobeMesh />
 
         <Atmosphere />
-
-        <EnergyRings />
-
-        <OrbitParticles />
 
         <CountriesLayer
           selectedCountry={
@@ -595,15 +387,15 @@ function GlobeScene({
         />
       </group>
 
-<OrbitControls
-  ref={controlsRef}
-  enablePan={false}
-  enableRotate={false}
-  enableZoom={false}
-  minDistance={3.5}
-  maxDistance={8.5}
-  enableDamping={false}
-/>
+      <OrbitControls
+        ref={controlsRef}
+        enablePan={false}
+        enableRotate={false}
+        enableZoom={false}
+        minDistance={3.5}
+        maxDistance={8.5}
+        enableDamping={false}
+      />
     </>
   )
 }
@@ -623,20 +415,6 @@ function GlobeLoading() {
 export default function WorldGlobe({
   selectedCountry,
 }: WorldGlobeProps) {
-  useEffect(() => {
-    if (!selectedCountry) {
-      return
-    }
-
-    console.log(
-      '[WorldGlobe] Selected country:',
-      selectedCountry.name,
-      selectedCountry.isoA3,
-    )
-  }, [
-    selectedCountry,
-  ])
-
   return (
     <div
       className="world-globe"
@@ -648,7 +426,6 @@ export default function WorldGlobe({
         position: 'relative',
         overflow: 'hidden',
         flex: '1 1 auto',
-
         background:
           'radial-gradient(circle at center, #102D48 0%, #07121F 45%, #02060D 100%)',
       }}
@@ -669,15 +446,38 @@ export default function WorldGlobe({
           near: 0.1,
           far: 100,
         }}
-        dpr={[
-          1,
-          2,
-        ]}
+
+        /*
+         * Important for mobile:
+         *
+         * Never render the globe at 2x device
+         * pixel ratio. On high-density phones
+         * this can multiply the fragment workload
+         * dramatically.
+         */
+        dpr={1}
+
         gl={{
-          antialias: true,
+          /*
+           * Antialiasing costs GPU time and is not
+           * necessary here because the globe is
+           * already rendered at a reasonable
+           * resolution.
+           */
+          antialias: false,
+
           alpha: true,
+
           powerPreference:
             'high-performance',
+
+          /*
+           * Helps avoid unnecessary depth-buffer
+           * overhead from the transparent scene.
+           */
+          depth: true,
+
+          stencil: false,
         }}
       >
         <Suspense
